@@ -19,7 +19,7 @@ public class SubscribeTest extends ChannelServerTestHelper {
 	@Test
 	public void testNotProvidingNodeReturnsErrorStanza() throws Exception {
 
-		Packet packet = getPacket("resources/channel/node/subscribe/missing-nodeid.request");
+		Packet packet = getPacket("resources/channel/node/subscribe/missing-node-id.request");
 		Packet reply = sendPacket(packet);
 
 		Assert.assertEquals(packet.getPacketID(), getValue(reply, "/iq/@id"));
@@ -61,6 +61,11 @@ public class SubscribeTest extends ChannelServerTestHelper {
 	public void testSuccesfulSubscriptionReturnsExceptedResponse()
 			throws Exception {
 		String node = createNode();
+		
+		TestPacket unsubscribePacket = getPacket("resources/channel/node/unsubscribe/success.request");
+		unsubscribePacket.setVariable("$NODE", node);
+		sendPacket(unsubscribePacket);
+		
 		TestPacket packet = getPacket("resources/channel/node/subscribe/success.request");
 		packet.setVariable("$NODE", node);
 		Packet reply = sendPacket(packet);
@@ -68,7 +73,7 @@ public class SubscribeTest extends ChannelServerTestHelper {
 		Assert.assertEquals("result", getValue(reply, "/iq/@type"));
 		Assert.assertEquals("subscribed",
 				getValue(reply, "/iq/pubsub/subscription/@subscription"));
-		Assert.assertEquals("member",
+		Assert.assertEquals("publisher",
 				getValue(reply, "/iq/pubsub/affiliation/@affiliation"));
 
 	}

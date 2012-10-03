@@ -19,7 +19,7 @@ public class UnsubscribeTest extends ChannelServerTestHelper {
 	@Test
 	public void testNotProvidingNodeReturnsErrorStanza() throws Exception {
 
-		Packet packet = getPacket("resources/channel/node/unsubscribe/missing-nodeid.request");
+		Packet packet = getPacket("resources/channel/node/unsubscribe/missing-node-id.request");
 		Packet reply = sendPacket(packet);
 
 		Assert.assertEquals(packet.getPacketID(), getValue(reply, "/iq/@id"));
@@ -33,10 +33,9 @@ public class UnsubscribeTest extends ChannelServerTestHelper {
 	@Test
 	public void testTryingToUnsubscribeToNonExistentNodeReturnsErrorStanza()
 			throws Exception {
-
 		Packet packet = getPacket("resources/channel/node/unsubscribe/not-existing-node.request");
 		Packet reply = sendPacket(packet);
-
+		
 		Assert.assertEquals(packet.getPacketID(), getValue(reply, "/iq/@id"));
 		Assert.assertEquals("error", getValue(reply, "/iq/@type"));
 		Assert.assertTrue(exists(reply,

@@ -19,6 +19,7 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.Packet;
 
 /**
@@ -40,7 +41,7 @@ public class PacketReceivedQueue {
 
 	public static Packet getPacketWithId(String id)
 			throws InvalidParameterException, InterruptedException {
-		return getPacketWithId(id, 15000);
+		return getPacketWithId(id, 30000);
 	}
 
 	public static Packet getPacketWithId(String id, long timeout)
