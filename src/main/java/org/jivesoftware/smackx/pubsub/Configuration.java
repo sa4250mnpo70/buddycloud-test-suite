@@ -17,56 +17,26 @@ import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.packet.PacketExtension;
 
 /**
- * Represents a affiliation between a user and a node, where the {@link #type} defines 
- * the type of affiliation.
+ * Represents the event where configuration of a node is updated.
  * 
- * Affiliations are retrieved from the {@link PubSubManager#getAffiliations()} method, which 
- * gets affiliations for the calling user, based on the identity that is associated with 
- * the {@link Connection}.
- * 
- * @author Robin Collier
+ * @author Lloyd Watkin <lloyd.watkin@surevine.com>
  */
-public class Affiliation implements PacketExtension
+public class Configuration implements PacketExtension
 {
 	protected String node;
-	protected Type type;
-	protected String jid;
 	
-	public enum Type
-	{
-		member, none, outcast, owner, publisher
-	}
-
 	/**
-	 * Constructs an affiliation.
+	 * Constructs a configuration.
 	 * 
-	 * @param nodeId The node the user is affiliated with.
-	 * @param affiliation The type of affiliation.
+	 * @param node The node that was configured
 	 */
-	public Affiliation(String nodeId, Type affiliation)
-	{
-		this(nodeId, affiliation, null);
+	public Configuration(String node) {
+		this.node = node;
 	}
 		
-	public Affiliation(String node, Type affiliation, String jid) {
-		this.node = node;
-		type = affiliation;
-		this.jid = jid;
-	}
-	
-	public String getNodeId()
-	{
-		return node;
-	}
-	
-	public Type getType()
-	{
-		return type;
-	}
-	
 	public String getElementName()
 	{
-		return "affiliation";
+		return "configuration";
 	}
 
 	public String getNamespace()
@@ -78,15 +48,7 @@ public class Affiliation implements PacketExtension
 	{
 		StringBuilder builder = new StringBuilder("<");
 		builder.append(getElementName());
-		if (null != node) {
-		    appendAttribute(builder, "node", node);
-		}
-		if (null != type) {
-		    appendAttribute(builder, "affiliation", type.toString());
-		}
-		if (null != jid) {
-			appendAttribute(builder, "jid", jid.toString());
-		}
+		appendAttribute(builder, "node", node);
 		builder.append("/>");
 		return builder.toString();
 	}

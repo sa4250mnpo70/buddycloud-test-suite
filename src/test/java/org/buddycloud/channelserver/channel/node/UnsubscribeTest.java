@@ -1,9 +1,12 @@
 package org.buddycloud.channelserver.channel.node;
 
+import java.util.HashMap;
+
 import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 import org.buddycloud.channelserver.ChannelServerTestHelper;
+import org.buddycloud.channelserver.PacketReceivedQueue;
 import org.buddycloud.channelserver.TestPacket;
 import org.jivesoftware.smack.packet.Packet;
 import org.junit.Ignore;

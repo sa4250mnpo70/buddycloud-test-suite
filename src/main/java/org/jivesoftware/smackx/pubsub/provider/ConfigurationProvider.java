@@ -18,21 +18,20 @@ import java.util.Map;
 
 import org.jivesoftware.smack.packet.PacketExtension;
 import org.jivesoftware.smackx.provider.EmbeddedExtensionProvider;
-import org.jivesoftware.smackx.pubsub.EventElement;
-import org.jivesoftware.smackx.pubsub.EventElementType;
-import org.jivesoftware.smackx.pubsub.NodeExtension;
+import org.jivesoftware.smackx.pubsub.Configuration;
 
 /**
- * Parses the event element out of the message stanza from 
- * the server as specified in the <a href="http://xmpp.org/extensions/xep-0060.html#schemas-event">event schema</a>.
+ * Parses the Configure element out of the reply stanza from the server
+ * as specified in the <a href="http://xmpp.org/extensions/xep-0060.html#schemas-pubsub">Configure schema</a>.
  * 
- * @author Robin Collier
+ * @author Lloyd Watkin <lloyd.watkin@surevine.com>
  */
-public class EventProvider extends EmbeddedExtensionProvider
+public class ConfigurationProvider extends EmbeddedExtensionProvider
 {
 	@Override
-	protected PacketExtension createReturnExtension(String currentElement, String currentNamespace, Map<String, String> attMap, List<? extends PacketExtension> content)
+	protected PacketExtension createReturnExtension(String currentElement, String currentNamespace, Map<String, String> attributeMap, List<? extends PacketExtension> content)
 	{
-	   	return new EventElement(EventElementType.valueOf(content.get(0).getElementName()), content);
+		return new Configuration(attributeMap.get("node"));
 	}
+
 }

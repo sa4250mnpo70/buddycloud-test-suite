@@ -20,7 +20,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
-
+import org.jivesoftware.smack.SmackConfiguration;
 import javax.management.RuntimeErrorException;
 
 import org.apache.log4j.Logger;
@@ -56,7 +56,7 @@ public class XMPPAcceptanceTestHelper {
 	private TestContext user1;
 	private TestContext user2;
 	
-	protected XMPPConnection[] xmppConnection = new XMPPConnection[2];
+	protected static XMPPConnection[] xmppConnection = new XMPPConnection[2];
 
 	private final static Logger LOGGER = Logger
 			.getLogger("XMPPAcceptanceTestHelper");
@@ -74,6 +74,11 @@ public class XMPPAcceptanceTestHelper {
 
 	private void createConnection(final int i) throws Exception {
 		int arrayOffset = i - 1;
+		
+		// Don't connect and register for every test!
+		if (null != this.xmppConnection[arrayOffset]) {
+			return;
+		}
 		ConnectionConfiguration cc = new ConnectionConfiguration(
 				user1.getServerHostname(), user1.getServerPort());
 
@@ -92,6 +97,7 @@ public class XMPPAcceptanceTestHelper {
 			@Override
 			public void processPacket(Packet packet) {
 				if (packet.getTo().contains(userJid)) {
+					PacketReceivedQueue.addPacket(packet);
 					LOGGER.debug("    --- Receiving packet for user" + i + " ---");
 					LOGGER.debug(packet.toXML());
 				}
@@ -99,7 +105,8 @@ public class XMPPAcceptanceTestHelper {
 		}, new PacketFilter() {
 			@Override
 			public boolean accept(Packet packet) {
-				return ((packet instanceof IQ) && (packet.getTo().contains(userJid)));
+				return (packet.getTo().contains(userJid));
+				//return ((packet instanceof IQ) && (packet.getTo().contains(userJid)));
 			}
 		});
 		xmppConnection[arrayOffset].addPacketSendingListener(new PacketListener() {
@@ -113,11 +120,11 @@ public class XMPPAcceptanceTestHelper {
 		}, new PacketFilter() {
 			@Override
 			public boolean accept(Packet packet) {
-				return ((packet instanceof IQ) && (packet.getTo().contains(userJid)));
+				return ((packet instanceof IQ) && (null != packet.getTo()) && (true == packet.getTo().contains(userJid)));
 			}
 		});
 		Packet packet = getPacket("resources/register/register.request");
-		sendPacket(packet, i);
+		sendPacket(packet, i, (long) 10000);
 	}
 
 	public void setUsers(TestContext user1, TestContext user2) {
@@ -170,6 +177,14 @@ public class XMPPAcceptanceTestHelper {
 			p.setVariable(entry.getKey(), entry.getValue());
 		}
 	}
+	
+	public String getUserJid(int userNumber) {
+	    TestContext user = user1;
+	    if (2 == userNumber) {
+	    	user = user2;
+	    }
+	    return user.getClientUser() + "@" + user.getServiceName();
+	}
 
 	protected TestPacket getPacket(String stanzaFile, int userNumber) throws IOException {
 		return preparePacket(getPacketXml(stanzaFile), userNumber);
@@ -185,7 +200,8 @@ public class XMPPAcceptanceTestHelper {
 	protected Packet sendPacket(Packet p) throws Exception {
 		return sendPacket(p, 1);
 	}
-	protected Packet sendPacket(Packet p, int userNumber) throws Exception {
+	
+	protected Packet sendPacket(Packet p, int userNumber, long timeout) throws Exception {
 		
 		Connection connection;
 		if (1 == userNumber) {
@@ -196,16 +212,20 @@ public class XMPPAcceptanceTestHelper {
 		
 		Packet reply = null;
 		try {
-			reply = SyncPacketSend.getReply(connection, p);
+			reply = SyncPacketSend.getReply(connection, p, timeout, false);
 			if (reply.getPacketID().toString()
 					.equals(p.getPacketID().toString())) {
 				return reply;
 			}
 			
 		} catch (Exception e) {
-			throw new Exception(e.getMessage() + "\nPacket sent: " + p.toXML());
+			throw new Exception(e.getMessage());
 		}
 		return PacketReceivedQueue.getPacketWithId(p.getPacketID());
+	}
+	
+	protected Packet sendPacket(Packet p, int userNumber) throws Exception {
+		return sendPacket(p, userNumber, SmackConfiguration.getPacketReplyTimeout());
 	}
 
 	protected Packet sendPacketWithNextId(Packet p) throws Exception {
@@ -214,9 +234,13 @@ public class XMPPAcceptanceTestHelper {
 		return sendPacket(p);
 	}
 	
-	protected String getValue(Packet p, String xPath) throws JDOMException,
-			IOException, JaxenException {
-		Object evaluateFirst = getEl(p, xPath);
+	protected String getValue(Packet p, String xPath) throws Exception {
+		return getValue(p, xPath, false);
+	}
+		
+    protected String getValue(Packet p, String xPath, boolean namespaceFeature) throws Exception {
+    	
+		Object evaluateFirst = getEl(p, xPath, namespaceFeature);
 		if (evaluateFirst instanceof Attribute) {
 			Attribute attribute = (Attribute) evaluateFirst;
 			return attribute.getValue();
@@ -228,21 +252,22 @@ public class XMPPAcceptanceTestHelper {
 		return evaluateFirst == null ? null : ((Attribute) evaluateFirst).getValue();
 	}
 
-	protected String getText(Packet p, String xPath) throws JDOMException,
-			IOException, JaxenException {
+	protected String getText(Packet p, String xPath) throws Exception {
 		Text evaluateFirst = (Text) getEl(p, xPath);
 		return evaluateFirst == null ? null : evaluateFirst.getValue();
 	}
 
-	protected boolean exists(Packet p, String xPath) throws JDOMException,
-			IOException, JaxenException {
+	protected boolean exists(Packet p, String xPath) throws Exception {
 		return getEl(p, xPath) != null;
 	}
 
-	private Object getEl(Packet p, String xPath) throws JDOMException,
-			IOException {
+	private Object getEl(Packet p, String xPath) throws Exception {
+		return getEl(p, xPath, false);
+	}
+	
+	private Object getEl(Packet p, String xPath, boolean namespaceFeature) throws Exception {
 		SAXBuilder saxBuilder = new SAXBuilder();
-		saxBuilder.setFeature("http://xml.org/sax/features/namespaces", false);
+		saxBuilder.setFeature("http://xml.org/sax/features/namespaces", namespaceFeature);
 		Document replyDoc = saxBuilder.build(IOUtils.toInputStream(p.toXML()));
 		Object evaluateFirst = XPathFactory.instance().compile(xPath)
 				.evaluateFirst(replyDoc);

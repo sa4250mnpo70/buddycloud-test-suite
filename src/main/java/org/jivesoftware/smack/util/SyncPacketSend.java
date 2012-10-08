@@ -22,42 +22,41 @@ import org.jivesoftware.smack.filter.PacketIDFilter;
 import org.jivesoftware.smack.packet.Packet;
 
 /**
- * Utility class for doing synchronous calls to the server.  Provides several
+ * Utility class for doing synchronous calls to the server. Provides several
  * methods for sending a packet to the server and waiting for the reply.
  * 
  * @author Robin Collier
  */
-final public class SyncPacketSend
-{
-	private SyncPacketSend()
-	{	}
-	
-	static public Packet getReply(Connection connection, Packet packet, long timeout, boolean throwErrorStanzaExceptions)
-		throws XMPPException
-	{
-        PacketFilter responseFilter = new PacketIDFilter(packet.getPacketID());
-        PacketCollector response = connection.createPacketCollector(responseFilter);
-        
-        connection.sendPacket(packet);
+final public class SyncPacketSend {
+	private SyncPacketSend() {
+	}
 
-        // Wait up to a certain number of seconds for a reply.
-        Packet result = response.nextResult(timeout);
+	static public Packet getReply(Connection connection, Packet packet,
+			long timeout, boolean throwErrorStanzaExceptions) throws XMPPException {
+		PacketFilter responseFilter = new PacketIDFilter(packet.getPacketID());
+		PacketCollector response = connection
+				.createPacketCollector(responseFilter);
 
-        // Stop queuing results
-        response.cancel();
-        
-        if (result == null) {
-            throw new XMPPException("No response from server.");
-        }
-        else if ((result.getError() != null) && (true == throwErrorStanzaExceptions)) {
-            throw new XMPPException(result.getError());
-        }
-        return result;
+		connection.sendPacket(packet);
+
+		// Wait up to a certain number of seconds for a reply.
+		Packet result = response.nextResult(timeout);
+
+		// Stop queuing results
+		response.cancel();
+
+		if (result == null) {
+			throw new XMPPException("No response from server.");
+		} else if ((result.getError() != null) && (true == throwErrorStanzaExceptions)) {
+			throw new XMPPException(result.getError());
+		}
+		return result;
 	}
 
 	static public Packet getReply(Connection connection, Packet packet)
-		throws XMPPException
-	{
-		return getReply(connection, packet, SmackConfiguration.getPacketReplyTimeout(), SmackConfiguration.getThrowErrorStanzaExceptions());
+			throws XMPPException {
+		return getReply(connection, packet,
+				SmackConfiguration.getPacketReplyTimeout(),
+				SmackConfiguration.getThrowErrorStanzaExceptions());
 	}
 }
